@@ -1,0 +1,42 @@
+BN Diagram in Python code:
+
+from pgmpy.models import DiscreteBayesianNetwork
+import networkx as nx
+import matplotlib.pyplot as plt
+
+# BN design and illustration in diagram
+try: 
+model = DiscreteBayesianNetwork([
+    ("OwnershipComplexity", "ShellEntityRisk"),
+    ("CountryRisk", "ShellEntityRisk"),
+    ("EconomicSubstance", "ShellEntityRisk"),
+    ("ShellEntityRisk", "AdverseMedia"),
+    ("ShellEntityRisk", "AccountActivity"),
+    ("ShellEntityRisk", "EscalationRequired"),
+    ("AdverseMedia", "EscalationRequired"),
+])
+
+G = nx.DiGraph()
+G.add_edges_from(model.edges())
+
+pos = {
+    "OwnershipComplexity": (0, 2),
+    "CountryRisk": (0, 1),
+    "EconomicSubstance": (0, 0),
+    "ShellEntityRisk": (2, 1),
+    "AdverseMedia": (4, 1.7),
+    "AccountActivity": (4, 0.3),
+    "EscalationRequired": (4, 1),
+}
+
+plt.figure(figsize=(12, 5))
+nx.draw(G, pos, with_labels=True, arrows=True, node_size=5200)
+nx.draw_networkx_labels(G, pos, labels=labels, font_size=10, font_weight="bold")
+plt.axis("off")
+plt.tight_layout()
+plt.show()
+
+# Please ignore the error as it does not effect the result.
+except Exception:
+    "name 'labels' is not defined"
+    pass

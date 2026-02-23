@@ -1,0 +1,139 @@
+Contents
+    1) Abstract
+    2) Introduction
+    3) Conceptual design of the decision support system (DSS)
+    4) Development of the Bayesian Network (BN)
+    5) Bayesian Network Implementation in Python 
+    6) Casual inference with Bayesian Networks
+    7) References
+    8) Appendices 
+       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Abstract
+
+Financial establishments such as banks and credit unions are required by law to demonstrate the robustness of its anti-money laundering and compliance programmes to the regulators in fighting financial crimes, and in the digital economy the modernization of client identification, what is known as know your client (KYC) and customer due diligence (CDD) framework, has become a fundamental requirement for maintaining financial integrity and ensuring smooth business operations. While KYC/CDD is a comprehensive term that includes all types of clients, the focus in this repository is on the corporate clients segment and especially on what is called anonymous shell entities. This repository demonstrates probabilistic decision support systems for the detection of the anonymous shell companies in the KYC/CDD process based on a Bayesian network decision support system and implemented in Python using the pgmpy library. The system is designed to assist analysts uncovering financial crime attempts and the perpetrators behind these entities.
+
+
+Introduction
+
+The client due diligence and know your client process is the core foundation of any financial institution’s compliance programme. The financial institutions through this process are not only identifying their clients but also understanding the clients’ nature of business and assessing the associated risks the clients bring such as money laundering, terrorism financing and sanctions circumvention. The implementation of robust compliance system and framework to identify, monitor and report higher-risk clients can substantially reduce exposure to criminal abuse and regulatory sanctions. However, a standard framework largely relies on deterministic rule based approaches and predefined risk scoring metrics which provide structure and consistency, but it is still limited in capacity to capture ambiguous and complex entity types such as shell entities. As stated by Tiwari et al.(2024) shell entities occupy a dual role of legitimate legal entities and potential vehicles for financial crimes. Shell entities are commonly defined as front or anonymous companies with minimal or no assets and limited substantive economic activity, often lacking a physical presence. In practical terms, shell entities largely exist only on paper. Notably, shell entities are lawful legal structures, however their negative reputation stems from frequent misuse by organised crime syndicates.
+
+In the presence of such uncertainty the engagement of the Bayesian Networks by facilitating probabilistic reasoning is necessary. As articulated by Pearl(1988), such models are particularly well suited to domains where latent causal mechanisms can not be directly observed and must be inferred from observable outcomes. In this repository the conceptual design and practical implementation of a Decision Support System (DSS) based on Bayesian Networks is to assist KYC escalation decisions. The objective is not to replace human decision making but to provide support to compliance analysts through transparent and explainable probabilistic risk assessments that complement professional judgment.
+
+
+
+
+
+
+Conceptual design of the decision support system (DSS)
+
+The purpose of the decision support system (DSS) is to support the KYC and onboarding analysts in the clients’ reviews for identifying shell entities and estimating the likelihood of elevated financial crime risks. The DSS system delivers probabilistic outputs to reinforce the escalation and enhanced due diligence decisions, whereby preserving human oversight.
+
+The DSS system tasks are to integrate various KYC indicators within a unified risk assessment framework for the purpose of facilitating the estimation of the likelihood of elevated financial crime risk. By providing probabilistic outputs, the framework supports escalation and enhanced due diligence decisions that allows analysts to assess the way that individual red flags contribute to overall risk evaluations. 
+
+Task: Assess likelihood of shell entity risk
+                     → DSS output: P(ShellEntityRisk = High) 
+Task: Decide escalation
+                     → DSS output: P(EscalationRequired = Yes | evidence)
+
+The objectives of the DSS system are to reduce the number of false positives escalation, which enhance consistency and transparency in KYC decision-making. Also by demonstrating explicable auditable decision that support the framework promote accountable and well documented compliance outcomes in line with expected regulators requirements for human oversight systems.
+Nonetheless the DSS system is subject to several limitations and constraints such as restricted ownership information in the commercial registry in different jurisdictions, limited verifiable financial information and static modelling assumptions that do not capture temporal dynamics. In addition, privacy laws and restrictions of information sharing across jurisdictions.
+For the success of the system, updated knowledge and structured data are crucial and encoded in the conditional probability tables (CPTs), and these sources of data and knowledge are customer type, domicile and operation jurisdictions risk, screening results, adverse media indicators, and account activity alongside compliance expert knowledge concerning the relationships between these factors and financial crime risk.
+
+To reach the performance improvement gradually for the DSS system, the conditional probabilities have to be updated based on the historical KYC outcomes and case studies. This update maintains progressive learning with clarity sustainability. The probabilities update is performed by the experts elicitation, frequent learning through lessons learned and Bayesian updating. To ensure the credibility and regulatory requirements, the system learning process is governed by formal review cycles, KYC and AFC analysts validation (human oversight) and perform audit and control by internal and external auditors to maintain transparency and accountability.
+The intended users for the DSS system are KYC and onboarding analysts and secondary users are anti-financial crime and compliance managers, investigation teams and internal auditors  , all of whom benefit from transparent and auditable decision logic.
+The DSS system is designed to be integrated with the existing identification and onboarding platform or anti-financial crime and investigation platforms as a decision-support layer rather than as a stand-alone system. It is designed to absorb the inputs from client identification platform and screening engines to include client profile data, registration and operation country, account activity and adverse media results. The probabilistic risk assessments and escalation recommendations are the system productions to the relevant analysts to assist decision making. To avoid disrupting compliance controls and ensure smooth integration into operations, the standard API connection is applied.
+
+
+Development of the Bayesian Network (BN)
+
+In the operational context of client identification and verification the analysts deduce the financial crime risks from the range of indirect indicators, as obviously such risks can not be distinguished directly, where each indicator delivers partial and uncertain evidence to financial crimes. From that perspective Bayesian Networks are specifically appropriate as it allows the systematic and transparent probabilistic inference of unobservable risk factors from observable data.
+
+The Bayesian Network consists of the following seven nodes: OwnershipComplexity (Low, Medium, High), CountryRisk (Low, Medium, High), EconomicSubstance (Strong, Moderate, Weak), ShellEntityRisk (latent) (Low, Medium, High), AdverseMedia (NoHit, Hit), AccountActivity (Normal, Unusual) and EscalationRequired (No, Yes). Every node in the network represents an element that is frequently used in the know your client and identification evaluations, supporting the model's interpretability and adherence to the applied compliance procedures and controls.
+
+The ShellEntityRisk is designated as a latent variable that is impacted by upstream contextual and structural issues, which include ownership complexity, economic substance and country risk. These upstream issues are ultimately resulting in the determination of the underlying probability of whether a client represents a shell entity or not. Observable factors including AccountActivity and AdverseMedia serve as indirect and inconclusive evidence for elevated risk associated with the shell entity and act for the observable results of the latent risk profile associated with ShellEntityRisk. Factors associated with significant observable indicators (i.e., negative media) and the estimation of the ShellEntityRisk factor are both determining influences for escalation of cases or client to the relevant responsible team such as anti-financial crime or investigation teams. With respect to the client identification and know your client environment, the distinction between observable consequences and root causes help to justify the divisions and permit transparent and reasonable decision support, as well as to support the underlying principles of causal reasoning that are widely accepted today. Probability tables for the nodes OwnershipComplexity,  CountryRisk and EconomicSubstance are illustrated below:
+
+OwnershipComplexity		CountryRisk		EconomicSubstance 
+State	Probability		State	Probability		State	Probability
+Low	0.5		Low	0.45		Strong	0.4
+Medium	0.3		Medium	0.35		Moderate	0.35
+High	0.2		High	0.2		Weak	0.25
+
+
+
+
+
+The Conditional Probability Tables (CPTs) were defined manually using assumptions informed by know your client domain knowledge. Higher-risk client profiles and countries of registration and operation risks are assumed to increase the likelihood of elevated financial crime risk, while adverse media materially raise the probability of escalation, with due consideration given to the existence of false positives. The presented probabilities should not be regarded as empirical calibrations of the model; rather it serves an illustrative purpose only. Furthermore, in order to maintain effective communication and manage the complexity of the model, some elements such as ownership complexities were specifically excluded, not the node itself. Consequently, the model is designed to be static in nature; therefore, future alterations to account activity patterns will not be captured within the model framework. Therefore, this limitation was explicitly recognized and justified for this particular repository. Conditional Probability Tables (CPTs) are provided in the Appendix.
+
+
+Partial CPT:
+
+ShellEntityRisk 
+Parents: OwnershipComplexity, CountryRisk, EconomicSubstance
+Ownership	Country	Substance	P(Low)	P(Medium)	P(High)
+Low	Low	Strong	0.85	0.1	0.05
+Low	Medium	Strong	0.7	0.2	0.1
+Medium	Medium	Moderate	0.4	0.4	0.2
+High	Medium	Weak	0.15	0.35	0.5
+High	High	Weak	0.05	0.2	0.75
+
+
+Bayesian Network Implementation in Python 
+
+The pgmpy library provides structure and basis for the creation of the Bayesian Network implementation in Python. The variable elimination algorithm performed an exact probabilistic inference once all nodes, relationships, and Conditional Probability Tables (CPTs) were specified in their entirety. To ensure system reliability the Bayesian Network is utilised to answer the following questions, and provided in the appendix:  
+    1. What is the probability that escalation is required given the presence of an adverse media hit?
+    2. What is the posterior distribution of the latent shell risk for a high-risk profile (i.e. high ownership complexity, high-risk country, weak substance)?
+    3. What is the probability that escalation is required given the absence of adverse media hit, but detection of suspicious account activity?
+
+
+
+
+
+
+
+
+
+
+
+
+Causal inference with Bayesian Networks (Extension of the KYC BN)
+
+The analysis of the causal inference with Bayesian Networks demonstrates that economic substance and complexity of ownership have a material causal impact on the escalation decision within the proposed system. Particularly, the escalation likelihood increases from 27.36% to 56.17% in the case of weak economic substance, and produces a difference in risk of 28.81% between the weak and strong economic substance conditions. The system also demonstrates that increasing the ownership complexity has a 16% higher chance of suggesting an escalation compared to normal ownership structure. The result data proposes that improving ownership transparency and verification of economic substance will reduce escalation rates under the assumed model structure. According to the model structure there are no identified backdoor adjustment sets that could distort the cause and effect relationship being studies, and assuming that the model is not lacking important influencing factors that could affect both the cause and the outcome simultaneously.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+References
+
+    1. Financial Action Task Force (FATF) (2025) International standards on combating money laundering and the financing of terrorism and proliferation (the FATF Recommendations). (Amended October 2025). Paris: FATF. Available at: https://www.fatf-gafi.org/en/publications/Fatfrecommendations/Fatf-recommendations.html (Accessed: December 2025).
+    2. European Parliament and Council of the European Union (2018) Directive (EU) 2018/843 of the European Parliament and of the Council of 30 May 2018 amending Directive (EU) 2015/849 on the prevention of the use of the financial system for the purposes of money laundering or terrorist financing, and amending Directives 2009/138/EC and 2013/36/EU. Brussels: Official Journal of the European Union. Available at: https://eur-lex.europa.eu/eli/dir/2018/843/oj/eng (Accessed: December 2025).
+    3.  European Commission (2019) Assessing portable KYC/CDD solutions in the banking sector. Brussels: European Commission. Available at: https://commission.europa.eu/document/download/528b8452-c71e-441b-a800-c90ab549101c_en?filename=assessing-portable-kyc-cdd-solutions-in-the-banking-sector-december2019_en.pdf (Accessed: December 2025).
+    4. European Parliamentary Research Service (EPRS) (2018) An overview of shell companies in the European Union. Brussels: European Parliament. Available at: https://www.europarl.europa.eu/cmsdata/155724/EPRS_STUD_627129_Shell%20companies%20in%20the%20EU.pdf (Accessed: December 2025).
+    5. UTiwari, M., Gepp, A. and Kumar, K. (2024) ‘Using data analytics to distinguish legitimate and illegitimate shell companies’, Journal of Economic Criminology, 7, 100123. Available at: https://www.sciencedirect.com/science/article/pii/S2949791424000757 (Accessed: December 2025).
+    6.  Probabilistic Reasoning in Intelligent Systems: Networks of Plausible Inference. Pearl, J. (1988).

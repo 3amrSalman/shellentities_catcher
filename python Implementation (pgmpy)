@@ -1,0 +1,201 @@
+# using pgmpy for the implementation of the Bayesian Network
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.models import DiscreteBayesianNetwork
+from pgmpy.inference import VariableElimination
+First, define the structure Directed Acyclic Graph (DAG)
+# Bayesian Network structure (DAG). Node encoding (integers)
+
+kyc_model = DiscreteBayesianNetwork([
+    ("OwnershipComplexity", "ShellEntityRisk"),
+    ("CountryRisk", "ShellEntityRisk"),
+    ("EconomicSubstance", "ShellEntityRisk"),
+    ("ShellEntityRisk", "AdverseMedia"),
+    ("ShellEntityRisk", "AccountActivity"),
+    ("ShellEntityRisk", "EscalationRequired"),
+    ("AdverseMedia", "EscalationRequired"),
+])
+Set up the relationships Conditional Probability Distribution (CPDs)
+ownership_cpd = TabularCPD(
+    variable="OwnershipComplexity",
+    variable_card=3,
+    values=[[0.50], [0.30], [0.20]]
+)
+
+country_cpd = TabularCPD(
+    variable="CountryRisk",
+    variable_card=3,
+    values=[[0.45], [0.35], [0.20]]
+)
+
+substance_cpd = TabularCPD(
+    variable="EconomicSubstance",
+    variable_card=3,
+    values=[[0.40], [0.35], [0.25]]
+)
+# Full CPT values for ShellEntityRisk in a dictionary for clarity: key = (OwnershipComplexity, CountryRisk,  #EconomicSubstance) 
+# and  value = (P(Shell=Low), P(Shell=Medium), P(Shell=High))
+
+shell_cpt = {
+    # EconomicSubstance = Strong (0)
+    (0,0,0):(0.85,0.10,0.05), (0,1,0):(0.75,0.15,0.10), (0,2,0):(0.65,0.20,0.15),
+    (1,0,0):(0.70,0.20,0.10), (1,1,0):(0.60,0.25,0.15), (1,2,0):(0.50,0.30,0.20),
+    (2,0,0):(0.60,0.25,0.15), (2,1,0):(0.50,0.30,0.20), (2,2,0):(0.40,0.35,0.25),
+
+    # EconomicSubstance = Moderate (1)
+    (0,0,1):(0.65,0.25,0.10), (0,1,1):(0.55,0.30,0.15), (0,2,1):(0.45,0.35,0.20),
+    (1,0,1):(0.50,0.35,0.15), (1,1,1):(0.40,0.40,0.20), (1,2,1):(0.30,0.45,0.25),
+    (2,0,1):(0.40,0.40,0.20), (2,1,1):(0.30,0.45,0.25), (2,2,1):(0.20,0.45,0.35),
+
+    # EconomicSubstance = Weak (2)
+    (0,0,2):(0.40,0.35,0.25), (0,1,2):(0.30,0.40,0.30), (0,2,2):(0.20,0.40,0.40),
+    (1,0,2):(0.30,0.40,0.30), (1,1,2):(0.20,0.40,0.40), (1,2,2):(0.10,0.40,0.50),
+    (2,0,2):(0.20,0.40,0.40), (2,1,2):(0.10,0.35,0.55), (2,2,2):(0.05,0.20,0.75),
+}
+
+# OwnershipComplexity (0,1,2) x CountryRisk (0,1,2) x EconomicSubstance (0,1,2)
+cols = []
+for own in [0,1,2]:
+    for country in [0,1,2]:
+        for subst in [0,1,2]:
+            cols.append(shell_cpt[(own, country, subst)])
+
+low_row    = [c[0] for c in cols]
+medium_row = [c[1] for c in cols]
+high_row   = [c[2] for c in cols]
+
+shell_cpd = TabularCPD(
+    variable="ShellEntityRisk",
+    variable_card=3,
+    values=[low_row, medium_row, high_row],
+    evidence=["OwnershipComplexity", "CountryRisk", "EconomicSubstance"],
+    evidence_card=[3,3,3]
+)
+Observable indicator CPDs
+adverse_media_cpd = TabularCPD(
+    variable="AdverseMedia",
+    variable_card=2,
+    values=[
+        # P(NoHit | Shell=Low,Med,High)
+        [0.90, 0.70, 0.40],
+        # P(Hit | Shell=Low,Med,High)
+        [0.10, 0.30, 0.60],
+    ],
+    evidence=["ShellEntityRisk"],
+    evidence_card=[3]
+)
+
+account_activity_cpd = TabularCPD(
+    variable="AccountActivity",
+    variable_card=2,
+    values=[
+        # P(Normal | Shell=Low,Med,High)
+        [0.85, 0.65, 0.40],
+        # P(Unusual | Shell=Low,Med,High)
+        [0.15, 0.35, 0.60],
+    ],
+    evidence=["ShellEntityRisk"],
+    evidence_card=[3]
+)
+Decision node CPT: EscalationRequired | ShellEntityRisk, AdverseMedia
+# Column order: (Shell=0,Media=0), (Shell=0,Media=1), (Shell=1,Media=0), (Shell=1,Media=1), (Shell=2,Media=0), (Shell=2,Media=1)
+
+escalation_cpd = TabularCPD(
+    variable="EscalationRequired",
+    variable_card=2,
+    values=[
+        # P(No | ...)
+        [0.95, 0.70, 0.50, 0.25, 0.20, 0.05],
+        # P(Yes | ...)
+        [0.05, 0.30, 0.50, 0.75, 0.80, 0.95],
+    ],
+    evidence=["ShellEntityRisk", "AdverseMedia"],
+    evidence_card=[3,2]
+)
+Adding the relationships and validate
+kyc_model.add_cpds(
+    ownership_cpd,
+    country_cpd,
+    substance_cpd,
+    shell_cpd,
+    adverse_media_cpd,
+    account_activity_cpd,
+    escalation_cpd
+)
+
+print("Model valid?", kyc_model.check_model())
+Model valid? True
+Examine the structure of the graph
+print("Nodes:", kyc_model.nodes())
+print("Edges:", list(kyc_model.edges()))
+print("\nCPDs:")
+for cpd in kyc_model.get_cpds():
+    print(cpd)
+    print("-" * 60)
+Nodes: ['OwnershipComplexity', 'ShellEntityRisk', 'CountryRisk', 'EconomicSubstance', 'AdverseMedia', 'AccountActivity', 'EscalationRequired']
+Edges: [('OwnershipComplexity', 'ShellEntityRisk'), ('ShellEntityRisk', 'AdverseMedia'), ('ShellEntityRisk', 'AccountActivity'), ('ShellEntityRisk', 'EscalationRequired'), ('CountryRisk', 'ShellEntityRisk'), ('EconomicSubstance', 'ShellEntityRisk'), ('AdverseMedia', 'EscalationRequired')]
+
+CPDs:
++------------------------+-----+
+| OwnershipComplexity(0) | 0.5 |
++------------------------+-----+
+| OwnershipComplexity(1) | 0.3 |
++------------------------+-----+
+| OwnershipComplexity(2) | 0.2 |
++------------------------+-----+
+------------------------------------------------------------
++----------------+------+
+| CountryRisk(0) | 0.45 |
++----------------+------+
+| CountryRisk(1) | 0.35 |
++----------------+------+
+| CountryRisk(2) | 0.2  |
++----------------+------+
+------------------------------------------------------------
++----------------------+------+
+| EconomicSubstance(0) | 0.4  |
++----------------------+------+
+| EconomicSubstance(1) | 0.35 |
++----------------------+------+
+| EconomicSubstance(2) | 0.25 |
++----------------------+------+
+------------------------------------------------------------
++---------------------+-----+------------------------+
+| OwnershipComplexity | ... | OwnershipComplexity(2) |
++---------------------+-----+------------------------+
+| CountryRisk         | ... | CountryRisk(2)         |
++---------------------+-----+------------------------+
+| EconomicSubstance   | ... | EconomicSubstance(2)   |
++---------------------+-----+------------------------+
+| ShellEntityRisk(0)  | ... | 0.05                   |
++---------------------+-----+------------------------+
+| ShellEntityRisk(1)  | ... | 0.2                    |
++---------------------+-----+------------------------+
+| ShellEntityRisk(2)  | ... | 0.75                   |
++---------------------+-----+------------------------+
+------------------------------------------------------------
++-----------------+-----+--------------------+
+| ShellEntityRisk | ... | ShellEntityRisk(2) |
++-----------------+-----+--------------------+
+| AdverseMedia(0) | ... | 0.4                |
++-----------------+-----+--------------------+
+| AdverseMedia(1) | ... | 0.6                |
++-----------------+-----+--------------------+
+------------------------------------------------------------
++--------------------+-----+--------------------+
+| ShellEntityRisk    | ... | ShellEntityRisk(2) |
++--------------------+-----+--------------------+
+| AccountActivity(0) | ... | 0.4                |
++--------------------+-----+--------------------+
+| AccountActivity(1) | ... | 0.6                |
++--------------------+-----+--------------------+
+------------------------------------------------------------
++-----------------------+-----+--------------------+
+| ShellEntityRisk       | ... | ShellEntityRisk(2) |
++-----------------------+-----+--------------------+
+| AdverseMedia          | ... | AdverseMedia(1)    |
++-----------------------+-----+--------------------+
+| EscalationRequired(0) | ... | 0.05               |
++-----------------------+-----+--------------------+
+| EscalationRequired(1) | ... | 0.95               |
++-----------------------+-----+--------------------+
+------------------------------------------------------------
